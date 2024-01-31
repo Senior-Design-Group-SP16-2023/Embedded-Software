@@ -16,7 +16,7 @@
 };
 
 &uart0 {
-    status = "disabled";
+    status = "okay";
 };
 
 &spi1_default {
