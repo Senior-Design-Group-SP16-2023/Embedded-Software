@@ -6,7 +6,14 @@
     "files.associations": {
         "bluetooth.h": "c",
         "bluetooth_main.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "kernel.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "common.h": "c",
+        "gatt.h": "c",
+        "byteorder.h": "c"
     },
     "C_Cpp.default.configurationProvider": "nordic-semiconductor.nrf-connect"
 }
