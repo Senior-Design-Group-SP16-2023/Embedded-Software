@@ -27,13 +27,14 @@ int main(){
 }
 
 //Testing notifier with a simulated sensor thread
-uint32_t fake_sensor = 100;
+uint8_t fake_sensor[TRANSMIT_SIZE] = {0};
+
 #define NOTIFY_INTERVAL 500
 
 static void simulate_data(void) {
-	fake_sensor++;
-	if (fake_sensor == 200) {
-		fake_sensor = 100;
+	fake_sensor[0]++;
+	if (fake_sensor[0] == 200) {
+		fake_sensor[0] = 100;
 	}
 }
 

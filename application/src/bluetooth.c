@@ -96,8 +96,9 @@ BT_GATT_SERVICE_DEFINE(
 
 
 // Notifier function
-int transmitGyroData(uint32_t sensor_value)
-{
+static char _sensor_value[TRANSMIT_SIZE];
+int transmitGyroData(char *sensor_value){
+	memcpy(_sensor_value, sensor_value, TRANSMIT_SIZE);
 	printf("sending, %x\n", sensor_value);
 	printf("notify_gyro_enabled: %i\n", notify_gyro_enabled);
 	if (!notify_gyro_enabled) {
@@ -105,6 +106,6 @@ int transmitGyroData(uint32_t sensor_value)
 	}
 	//TODO: Get rid of hardcoded reference to the attributes table
 
-	return bt_gatt_notify(NULL, &service_handle.attrs[1], &sensor_value, sizeof(sensor_value));
+	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
 }
 #pragma endregion
