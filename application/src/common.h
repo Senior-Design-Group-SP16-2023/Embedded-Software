@@ -12,13 +12,15 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
 #include <stddef.h>
+#include <soc.h>
 #include <string.h>
 #include <errno.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <soc.h>
+#include <dk_buttons_and_leds.h>
 
 
 
