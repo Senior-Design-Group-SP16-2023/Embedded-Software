@@ -75,16 +75,14 @@ int bluetooth_init(void) {
 #pragma region CUSTOM BLE SERVICE
 static bool notify_gyro_enabled;
 
-// Config change callback for MYSENSOR characteristic
-static void gyro_cccd_change_callback(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	printf("MySensor CCCD changed to %i\n", value);
+// Config change callback for gyro characteristic
+static void gyro_cccd_change_callback(const struct bt_gatt_attr *attr, uint16_t value){
+	printf("GYRO CCCD changed to %i\n", value);
 	notify_gyro_enabled = (value == BT_GATT_CCC_NOTIFY);
 }
-
 // Service Declaration 
 BT_GATT_SERVICE_DEFINE(
-	my_lbs_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_SENSOR_SERVICE),
+	service_handle, BT_GATT_PRIMARY_SERVICE(BT_UUID_SENSOR_SERVICE),
 	BT_GATT_CHARACTERISTIC(
 		BT_UUID_GYRO, 
 		BT_GATT_CHRC_NOTIFY, 
@@ -107,6 +105,6 @@ int transmitGyroData(uint32_t sensor_value)
 	}
 	//TODO: Get rid of hardcoded reference to the attributes table
 
-	return bt_gatt_notify(NULL, &my_lbs_svc.attrs[1], &sensor_value, sizeof(sensor_value));
+	return bt_gatt_notify(NULL, &service_handle.attrs[1], &sensor_value, sizeof(sensor_value));
 }
 #pragma endregion
