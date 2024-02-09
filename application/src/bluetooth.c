@@ -73,12 +73,12 @@ int bluetooth_init(void) {
 #pragma endregion
 
 #pragma region CUSTOM BLE SERVICE
-static bool notify_gyro_enabled;
+static bool notify_enabled;
 
-// Config change callback for gyro characteristic
-static void gyro_cccd_change_callback(const struct bt_gatt_attr *attr, uint16_t value){
-	printf("GYRO CCCD changed to %i\n", value);
-	notify_gyro_enabled = (value == BT_GATT_CCC_NOTIFY);
+// Config change callback for sensor characteristic
+static void cccd_change_callback(const struct bt_gatt_attr *attr, uint16_t value){
+	printf("CCCD changed to %i\n", value);
+	notify_enabled = (value == BT_GATT_CCC_NOTIFY);
 }
 // Service Declaration 
 BT_GATT_SERVICE_DEFINE(
@@ -91,21 +91,35 @@ BT_GATT_SERVICE_DEFINE(
 		NULL, 
 		NULL
 	),
-	BT_GATT_CCC(gyro_cccd_change_callback, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CCC(cccd_change_callback, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 
 // Notifier function
 static char _sensor_value[TRANSMIT_SIZE];
-int transmitGyroData(char *sensor_value){
+
+int transmitData(char *sensor_value){
 	memcpy(_sensor_value, sensor_value, TRANSMIT_SIZE);
 	printf("sending, %x\n", sensor_value);
-	printf("notify_gyro_enabled: %i\n", notify_gyro_enabled);
-	if (!notify_gyro_enabled) {
+	printf("notify_enabled: %i\n", notify_enabled);
+	if (!notify_enabled) {
 		return -EACCES;
 	}
 	//TODO: Get rid of hardcoded reference to the attributes table
 
 	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
 }
+
+int _transmit(char* sensor_value){
+	memcpy(_sensor_value, sensor_value, TRANSMIT_SIZE);
+	printf("sending, %x\n", sensor_value);
+	printf("notify_enabled: %i\n", notify_enabled);
+	if (!notify_enabled) {
+		return -EACCES;
+	}
+	//TODO: Get rid of hardcoded reference to the attributes table
+
+	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
+}
+
 #pragma endregion

@@ -1,9 +1,11 @@
 #include "common.h"
 #include "bluetooth.h"
+#include "imu.h"
 
 #define RUN_STATUS_LED DK_LED1
 #define RUN_LED_BLINK_INTERVAL 1000
 #include <dk_buttons_and_leds.h>
+
 
 int main(){
     // initialize the leds
@@ -48,5 +50,5 @@ void send_data_thread(void) {
 	}
 }
 
-/* STEP 18.2 - Define and initialize a thread to send data periodically */
-K_THREAD_DEFINE(send_data_thread_id, STACKSIZE, send_data_thread, NULL, NULL, NULL, PRIORITY, 0, 0);
+
+K_THREAD_DEFINE(sensor_sample_thread_id, STACKSIZE, imu_main, NULL, NULL, NULL, PRIORITY, 0, 0);
