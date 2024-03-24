@@ -96,28 +96,18 @@ BT_GATT_SERVICE_DEFINE(
 
 
 // Notifier function
-static char _sensor_value[TRANSMIT_SIZE];
+static char _sensor_value[MAX_TRANSMIT_SIZE];
 
-int transmitData(char *sensor_value){
-	memcpy(_sensor_value, sensor_value, TRANSMIT_SIZE);
-	printf("sending, %x\n", sensor_value);
+int transmitData(char *sensor_value, size_t len){
+	if(len > MAX_TRANSMIT_SIZE){
+		return -EINVAL;
+	}
+	
+	memcpy(_sensor_value, sensor_value, len);
 	printf("notify_enabled: %i\n", notify_enabled);
 	if (!notify_enabled) {
 		return -EACCES;
 	}
-	//TODO: Get rid of hardcoded reference to the attributes table
-
-	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
-}
-
-int _transmit(char* sensor_value){
-	memcpy(_sensor_value, sensor_value, TRANSMIT_SIZE);
-	printf("sending, %x\n", sensor_value);
-	printf("notify_enabled: %i\n", notify_enabled);
-	if (!notify_enabled) {
-		return -EACCES;
-	}
-	//TODO: Get rid of hardcoded reference to the attributes table
 
 	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
 }

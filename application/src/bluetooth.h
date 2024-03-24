@@ -29,14 +29,14 @@ bool getConnectionStatus();
 #define BT_UUID_ACCEL           BT_UUID_DECLARE_128(BT_UUID_ACCEL_UUID_VAL)
 
 //MACROS
-#define TRANSMIT_SIZE 16
+#define MAX_TRANSMIT_SIZE 16
 
 
 
 /** @brief Send the sensor value as notification. 
- * @param[in] sensor_value The gyro value. Expecting a 16 byte array.
+ * @param[in] sensor_value The sensor value to transmit. Must be less than MAX_TRANSMIT_SIZE
  * @retval 0 If successful
  */
-int transmitData(char* sensor_value);
+int transmitData(char* sensor_value, size_t len);
 
 #endif

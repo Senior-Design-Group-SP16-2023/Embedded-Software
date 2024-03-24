@@ -29,26 +29,38 @@ int main(){
 }
 
 //Testing notifier with a simulated sensor thread
-uint8_t fake_sensor[TRANSMIT_SIZE] = {0};
+// uint8_t fake_sensor[TRANSMIT_SIZE] = {0};
 
-#define NOTIFY_INTERVAL 500
+// #define NOTIFY_INTERVAL 500
 
-static void simulate_data(void) {
-	fake_sensor[0]++;
-	if (fake_sensor[0] == 200) {
-		fake_sensor[0] = 100;
-	}
-}
+// static void simulate_data(void) {
+// 	fake_sensor[0]++;
+// 	if (fake_sensor[0] == 200) {
+// 		fake_sensor[0] = 100;
+// 	}
+// }
 
-void send_data_thread(void) {
-	while (1) {
-		/* Simulate data */
-		simulate_data();
-		/* Send notification, the function sends notifications only if a client is subscribed */
-		transmitGyroData(fake_sensor);
-		k_sleep(K_MSEC(NOTIFY_INTERVAL));
-	}
-}
+// void send_data_thread(void) {
+// 	while (1) {
+// 		/* Simulate data */
+// 		simulate_data();
+// 		/* Send notification, the function sends notifications only if a client is subscribed */
+// 		transmitData(fake_sensor);
+// 		k_sleep(K_MSEC(NOTIFY_INTERVAL));
+// 	}
+// }
 
 
 K_THREAD_DEFINE(sensor_sample_thread_id, STACKSIZE, imu_main, NULL, NULL, NULL, PRIORITY, 0, 0);
+
+
+
+/**
+ * TODO: create a thread for the IMU
+ * TODO: create a q for the IMU thread
+ * TODO: feed q to IMU_main with voidptr
+ * TODO: add error to IMU_main if it doesnt get a valid queueptr
+ * TODO: change IMU_main to push to the queue rather than printing
+ * TODO: change simulated thread to consume from the IMU thread's queue as fast as it comes in
+ * TODO: migrate any delays to the IMU as a sampling rate control
+*/
