@@ -1,13 +1,16 @@
 #include "common.h"
 #include "bluetooth.h"
 
- #pragma region BLE SETUP AND INITIALIZATION
+#pragma region BLE SETUP AND INITIALIZATION
 static struct bt_le_adv_param *adv_param = BT_LE_ADV_PARAM(
-	(BT_LE_ADV_OPT_CONNECTABLE |
-	 BT_LE_ADV_OPT_USE_IDENTITY), /* Connectable advertising and use identity address */
+	(
+		BT_LE_ADV_OPT_CONNECTABLE |
+	 	BT_LE_ADV_OPT_USE_IDENTITY
+	), /* Connectable advertising and use identity address */
 	800, /* Min Advertising Interval 500ms (800*0.625ms) */
 	801, /* Max Advertising Interval 500.625ms (801*0.625ms) */
-	NULL); /* Set to NULL for undirected advertising */
+	NULL
+); /* Set to NULL for undirected advertising */
 
 LOG_MODULE_REGISTER(Bluetooth_c, LOG_LEVEL_INF);
 
@@ -104,7 +107,7 @@ int transmitData(char *sensor_value, size_t len){
 	}
 	
 	memcpy(_sensor_value, sensor_value, len);
-	printf("notify_enabled: %i\n", notify_enabled);
+	// printf("notify_enabled: %i\n", notify_enabled);
 	if (!notify_enabled) {
 		return -EACCES;
 	}
