@@ -40,14 +40,21 @@
 #define OUTY_H_G            0x25
 #define OUTZ_L_G            0x26
 #define OUTZ_H_G            0x27
-#define SENSOR_DATA_BASE    OUTX_L_G
+#define SENSOR_GYRO_BASE    OUTX_L_G
 
+#define OUTX_L_A            0x28
+#define OUTX_H_A            0x29
+#define OUTY_L_A            0x2A
+#define OUTY_H_A            0x2B
+#define OUTZ_L_A            0x2C
+#define OUTZ_H_A            0x2D
+#define SENSOR_ACCEL_BASE   OUTX_L_A
 
 
 // Sensor configuration macros
 
-// Sampling Frequency
-#define SAMPLE_FREQ         0x0A 
+// Polling Frequency
+#define POLL_FREQ         0x64 
 
 // Gyroscope configs - CTRL2_G
 #define GYRO_OFF        (0x0 << 4)

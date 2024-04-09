@@ -1,5 +1,6 @@
 #include "common.h"
 #include "bluetooth.h"
+LOG_MODULE_REGISTER(BLUETOOTH_C, LOG_LEVEL_INF);
 
 #pragma region BLE SETUP AND INITIALIZATION
 static struct bt_le_adv_param *adv_param = BT_LE_ADV_PARAM(
@@ -12,12 +13,9 @@ static struct bt_le_adv_param *adv_param = BT_LE_ADV_PARAM(
 	NULL
 ); /* Set to NULL for undirected advertising */
 
-LOG_MODULE_REGISTER(Bluetooth_c, LOG_LEVEL_INF);
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
-#define CON_STATUS_LED DK_LED2
-#define USER_LED DK_LED3
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -37,13 +35,9 @@ static void on_connected(struct bt_conn *conn, uint8_t err){
 	}
 
 	printf("Connected to device\n");
-
-	dk_set_led_on(CON_STATUS_LED);
 }
 static void on_disconnected(struct bt_conn *conn, uint8_t reason){
 	printf("Disconnected (reason %u)\n", reason);
-
-	dk_set_led_off(CON_STATUS_LED);
 }
 struct bt_conn_cb connection_callbacks = {
 	.connected = on_connected,
@@ -107,11 +101,11 @@ int transmitData(char *sensor_value, size_t len){
 	}
 	
 	memcpy(_sensor_value, sensor_value, len);
-	// printf("notify_enabled: %i\n", notify_enabled);
+	printf("notify_enabled: %i\n", notify_enabled);
 	if (!notify_enabled) {
 		return -EACCES;
 	}
-
+	printf("transmitting...\n");
 	return bt_gatt_notify(NULL, &service_handle.attrs[1], &_sensor_value, sizeof(_sensor_value));
 }
 

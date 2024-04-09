@@ -6,7 +6,7 @@ This repository contains the embedded software for the ECE senior design project
 
 Before you clone the repository, it is important that you setup the necessary toolchains for an NRF based project.
 To install the **necessary VSCODE extensions**, follow NRF's getting started guide [here](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/installation.html).
-Ensure that you setup the **2.5.0** version of the toolchain.
+Ensure that you setup the **2.5.0** version of the toolchain. Note, we do not use the west workspace configuration, and utilize the global install of the SDK.
 
 After you have done this, clone this repository, and navigate to the `NRF connect` extension in your sidebar.
 This extension will have all of the tools you need to develop, flash, and debug the board.
@@ -18,8 +18,16 @@ After you this, that dialogue will be replaced by one asking you to create a bui
 First, hit **create build configuration** For the board **ENSURE** that you select the **nrf52dk_nrf52832**.
 Then, click on **add overlay** and select the file within the application folder (`application/nrf52dk_nrf52832.overlay`).
 If pin assignments change, you will have to edit that file to reflect it, but hopefully that will have been done by whoever adjusted the pinout.
+This will add the build configuration for the devboard.
 
-You are now setup to build, flash, and debug the board. Refer to the NRF vscode extension guides if you want to familiarize yourself with the environment.
+Next, you have to add the build configuration for our custom PCB.
+First, unzip the `senior_design_pcb.zip` file in the root of our repository. Navigate inside the `nordic/ncs/v.2.5.0` where you installed the SDK.
+Navigate into `zephyr/arch/boards/arm` and copy the `senior_design_pcb` folder into that directory.
+Then, navigate to the `NRF connect` extension in your sidebar, and hit **create build configuration**.
+Select the board **senior_design_pcb**. You do not need to add any overlay for this board.
+This will add the build configuration for our custom PCB.
+
+You are now setup to build, flash, and debug both boards. Refer to the NRF vscode extension guides if you want to familiarize yourself with the environment.
 
 ## Development Workflow
 
