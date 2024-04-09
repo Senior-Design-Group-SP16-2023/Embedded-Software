@@ -15,7 +15,11 @@ const struct spi_buf_set rx_buf = {&spi_rx_buffer, 1};
 
 // Bluetooth packet buffer
 #define SENSORDATALEN 12
+#define GYRO_DATA_OFFSET 0
+#define ACCEL_DATA_OFFSET 6
 static char sensor_value[SENSORDATALEN] = {0};
+int16_t* gyro_data = (int16_t*)(sensor_value + GYRO_DATA_OFFSET);
+int16_t* accel_data = (int16_t*)(sensor_value + ACCEL_DATA_OFFSET);
 
 // Helper macro to assemble sensor data out of the SPI buffer 
 // per sensor spec for values that are sharded across two registers
@@ -97,46 +101,24 @@ int imu_main(void){
 		tx_data[1] = 0x00; //wipe out the previous data
 		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
 			LOG_ERR("GYRO READ FAILED\n");
-		}else{
-			//Assemble data into a buffer
-			*(int16_t*)(&sensor_value[0]) = ASSEMBLE_SENSOR_DATA(rx_buf,1);
-			*(int16_t*)(&sensor_value[2]) = ASSEMBLE_SENSOR_DATA(rx_buf,3);
-			*(int16_t*)(&sensor_value[4]) = ASSEMBLE_SENSOR_DATA(rx_buf,5);
-			
-			LOG_INF(
-				"
-				Gyro Data:\n
-				X: %d\n
-				Y: %d\n
-				Z: %d\n
-				",
-				*(int16_t*)(&sensor_value[0]),
-				*(int16_t*)(&sensor_value[2]),
-				*(int16_t*)(&sensor_value[4])
-			);
+		} else {
+			uint8_t* rx_data_buf = rx_buf.buffers->buf;
+			gyro_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
+			gyro_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
+			gyro_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
+			LOG_INF("Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
 		}
-		
+
 		tx_data[0] = CONFIG(READ, SENSOR_ACCEL_BASE);
 		tx_data[1] = 0x00; //wipe out the previous data
 		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
 			LOG_ERR("ACCEL READ FAILED\n");
-		}else{
-			//Assemble data into a buffer
-			*(int16_t*)(&sensor_value[6]) = ASSEMBLE_SENSOR_DATA(rx_buf,1);
-			*(int16_t*)(&sensor_value[8]) = ASSEMBLE_SENSOR_DATA(rx_buf,3);
-			*(int16_t*)(&sensor_value[10]) = ASSEMBLE_SENSOR_DATA(rx_buf,5);
-			
-			LOG_INF(
-				"
-				Accel Data:\n
-				X: %d\n
-				Y: %d\n
-				Z: %d\n
-				",
-				*(int16_t*)(&sensor_value[6]),
-				*(int16_t*)(&sensor_value[8]),
-				*(int16_t*)(&sensor_value[10])
-			);
+		} else {
+			uint8_t* rx_data_buf = rx_buf.buffers->buf;
+			accel_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
+			accel_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
+			accel_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
+			LOG_INF("Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
 		}
 
 		transmitData(sensor_value, SENSORDATALEN);
