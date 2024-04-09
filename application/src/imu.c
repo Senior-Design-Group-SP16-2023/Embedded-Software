@@ -102,7 +102,6 @@ int imu_main(void){
 		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
 			LOG_ERR("GYRO READ FAILED\n");
 		} else {
-			uint8_t* rx_data_buf = rx_buf.buffers->buf;
 			gyro_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
 			gyro_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
 			gyro_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
@@ -114,7 +113,6 @@ int imu_main(void){
 		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
 			LOG_ERR("ACCEL READ FAILED\n");
 		} else {
-			uint8_t* rx_data_buf = rx_buf.buffers->buf;
 			accel_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
 			accel_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
 			accel_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
