@@ -113,6 +113,6 @@
 #define LPF2_XL_DISABLE 0 //default
 
 // Main function for Sensor Query thread
-int imu_main(void);
+int8_t imu_main(void);
 
 #endif

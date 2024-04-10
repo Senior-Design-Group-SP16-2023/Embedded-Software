@@ -7,19 +7,42 @@ const struct spi_dt_spec st_lsm6dso = SPI_DT_SPEC_GET(DT_NODELABEL(st_lsm6dso), 
 
 //data buffers for tx/rx
 uint8_t tx_data[2] = {0};
-uint8_t rx_data[8] = {0};
+uint8_t rx_data[16] = {0};
 struct spi_buf spi_tx_buffer = {tx_data, 2};
-struct spi_buf spi_rx_buffer = {rx_data, 8};
+struct spi_buf spi_rx_buffer = {rx_data, 16};
 const struct spi_buf_set tx_buf = {&spi_tx_buffer, 1};
 const struct spi_buf_set rx_buf = {&spi_rx_buffer, 1};
 
-// Bluetooth packet buffer
-#define SENSORDATALEN 12
+// Data buffer for Bluetooth
 #define GYRO_DATA_OFFSET 0
 #define ACCEL_DATA_OFFSET 6
-static char sensor_value[SENSORDATALEN] = {0};
+#define TIMESTAMP_OFFSET 12
+static ble_packet_buffer_t sensor_value = {0};
 int16_t* gyro_data = (int16_t*)(sensor_value + GYRO_DATA_OFFSET);
 int16_t* accel_data = (int16_t*)(sensor_value + ACCEL_DATA_OFFSET);
+int16_t* timestamp_ptr = (int16_t*)(sensor_value + TIMESTAMP_OFFSET);
+
+
+// Config Parameters (Calibration, Timestamp)
+static uint8_t calibration_enabled = 0;
+static int16_t calibration_offsets[6] = {0}; //TODO: Get rid of magic num, 3 for gyro 3 for accel
+static uint8_t calibration_counter = 0;
+static time_t timestamp = 0;
+
+// Calibration routine for sensor offsets
+static void calibrate_sensor(ble_packet_buffer_t data){
+	for(uint8_t i = 0; i < 6; i++){
+		calibration_offsets[i] = (calibration_offsets[i] + ((int16_t*)data)[i])/calibration_counter;
+	}
+}
+
+// Config Callback for Bluetooth
+static config_write_callback_t config_write_cb(const void* buf, uint16_t len, uint16_t offset, uint8_t flags){	
+	LOG_INF("IMU Config Write Called\n");
+	for(uint16_t i = offset; i < len; i++){
+		LOG_INF("idx: %i, value: 0x%x ", i, ((uint8_t*)buf)[i]);
+	}
+}
 
 // Helper macro to assemble sensor data out of the SPI buffer 
 // per sensor spec for values that are sharded across two registers
@@ -27,13 +50,10 @@ int16_t* accel_data = (int16_t*)(sensor_value + ACCEL_DATA_OFFSET);
 	(int16_t)(((uint16_t)((uint8_t *)spibufset.buffers->buf)[index+1]) << 8 | ((uint8_t *)spibufset.buffers->buf)[index]);
 
 
-int calibrate_sensor(void){
-	//TODO: Implement sensor calibration routine for 10 seconds
-	return -1;
-}
 
-int imu_main(void){
-    if(!spi_is_ready_dt(&st_lsm6dso)){
+static int8_t imu_init(void){
+	set_config_write_callback((config_write_callback_t*) &config_write_cb);
+	if(!spi_is_ready_dt(&st_lsm6dso)){
 		LOG_ERR("SPI not ready\n");
 		return -1;
     }
@@ -80,13 +100,6 @@ int imu_main(void){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
     }
-	// Configure Gyro Low pass filter
-	// tx_data[0] = CONFIG(WRITE, CTRL6_C);
-	// tx_data[1] = 0x00; //todo: replace with value to enable the gyro lowpass filter
-	// if(spi_write_dt(&st_lsm6dso, &tx_buf)){
-	// 	printf("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
-	// 	return -1;
-	// }
 
 	// Configure Accelerometer to run at 52Hz
 	tx_data[0] = CONFIG(WRITE, CTRL1_XL);
@@ -95,31 +108,41 @@ int imu_main(void){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
 	}
+	return 0;
+}
 
+int8_t imu_main(void){
+	int8_t err = imu_init();
+	if(err){
+		LOG_ERR("IMU init failed\n");
+		return -1;
+	}
     while(1){
 		tx_data[0] = CONFIG(READ, SENSOR_GYRO_BASE);
 		tx_data[1] = 0x00; //wipe out the previous data
 		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
-			LOG_ERR("GYRO READ FAILED\n");
+			LOG_ERR("SPI READ FAILED\n");
+			continue;
+		}
+		gyro_data[0] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 1); 	 //Gyro X
+		gyro_data[1] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 3); 	 //Gyro Y
+		gyro_data[2] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 5); 	 //Gyro Z
+		accel_data[0] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 7); 	 //Accel X
+		accel_data[1] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 9); 	 //Accel Y
+		accel_data[2] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 11);  //Accel Z
+		*timestamp_ptr = timestamp++;
+		LOG_INF("Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
+		LOG_INF("Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
+		if(calibration_enabled){
+			calibrate_sensor(sensor_value);
+			calibration_counter++;
+			timestamp = 0;
 		} else {
-			gyro_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
-			gyro_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
-			gyro_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
-			LOG_INF("Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
+			calibration_counter = 0;
+			transmitData(sensor_value);
 		}
 
-		tx_data[0] = CONFIG(READ, SENSOR_ACCEL_BASE);
-		tx_data[1] = 0x00; //wipe out the previous data
-		if(spi_transceive_dt(&st_lsm6dso, &tx_buf, &rx_buf)){
-			LOG_ERR("ACCEL READ FAILED\n");
-		} else {
-			accel_data[0] = ASSEMBLE_SENSOR_DATA(rx_buf, 1);
-			accel_data[1] = ASSEMBLE_SENSOR_DATA(rx_buf, 3);
-			accel_data[2] = ASSEMBLE_SENSOR_DATA(rx_buf, 5);
-			LOG_INF("Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
-		}
 
-		transmitData(sensor_value, SENSORDATALEN);
 		k_msleep(1000/POLL_FREQ);
 	}
 	return 0;

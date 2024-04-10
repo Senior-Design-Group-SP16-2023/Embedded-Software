@@ -16,3 +16,13 @@ int main(){
     }
     imu_main();
 }
+
+
+/*
+TODO:
+- Add timestamping to setup + packet transmission
+- Add calibration SPI Calls
+- Calibration:
+    - Write 1 to start calibration
+    - Write 0 to stop calibration
+*/

@@ -27,7 +27,7 @@ static const struct bt_data sd[] = {
 
 //transmission control variables
 static bool notify_enabled = false;
-static char _sensor_value[MAX_TRANSMIT_SIZE];
+static ble_packet_buffer_t _sensor_value;
 
 // Connection management functions and callback table
 static void on_connected(struct bt_conn *conn, uint8_t err){
@@ -40,22 +40,69 @@ static void on_connected(struct bt_conn *conn, uint8_t err){
 static void on_disconnected(struct bt_conn *conn, uint8_t reason){
 	LOG_INF("Disconnected (reason %u)\n", reason);
 }
-
-static void on_cccd_change(const struct bt_gatt_attr *attr, uint16_t value){
-	LOG_INF("CCCD changed to %i\n", value);
-	notify_enabled = (value == BT_GATT_CCC_NOTIFY);
-}
 struct bt_conn_cb connection_callbacks = {
 	.connected = on_connected,
 	.disconnected = on_disconnected,
 };
 
-// Notifier function
-int transmitData(char *sensor_value, size_t len){
-	if(len > MAX_TRANSMIT_SIZE){
-		return -EINVAL;
+// Data characteristic callbacks
+static void on_data_cccd_change(const struct bt_gatt_attr *attr, uint16_t value){
+	LOG_INF("CCCD changed to %i\n", value);
+	notify_enabled = (value == BT_GATT_CCC_NOTIFY);
+}
+
+// Config characteristic callbacks
+
+static config_write_callback_t* config_write_cb = NULL;
+void set_config_write_callback(config_write_callback_t *callback){
+	LOG_INF("Setting write callback: %p\n", callback);
+	config_write_cb = callback;
+}
+
+static ssize_t on_config_write(
+	struct bt_conn *conn, 
+	const struct bt_gatt_attr *attr, 
+	const void *buf, 
+	uint16_t len, 
+	uint16_t offset, 
+	uint8_t flags
+	)
+{
+	LOG_INF("Config write\n");
+	if(config_write_cb == NULL){
+		LOG_WRN("No config write callback function set\n");
+		return -1;
 	}
-	memcpy(_sensor_value, sensor_value, len);
+	LOG_INF("Calling Config write callback\n");
+	(*config_write_cb)(buf, len, offset, flags);
+	return 0;
+}
+
+// Service Declaration 
+BT_GATT_SERVICE_DEFINE(
+	service_handle, BT_GATT_PRIMARY_SERVICE(BT_UUID_SENSOR_SERVICE),
+	BT_GATT_CHARACTERISTIC(
+		BT_UUID_DATA, 
+		BT_GATT_CHRC_NOTIFY, 
+		BT_GATT_PERM_NONE, 
+		NULL,
+		NULL, 
+		NULL
+	),
+	BT_GATT_CCC(on_data_cccd_change, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(
+		BT_UUID_CONFIG, 
+		BT_GATT_CHRC_WRITE, 
+		BT_GATT_PERM_WRITE, 
+		NULL,
+		on_config_write, 
+		NULL
+	),
+);
+
+// Notifier function for sensor data
+int8_t transmitData(ble_packet_buffer_t data){
+	memcpy(_sensor_value, data, sizeof(ble_packet_buffer_t));
 	if (!notify_enabled) {
 		LOG_WRN("Notifications not enabled\n");
 		return -EACCES;
@@ -65,7 +112,7 @@ int transmitData(char *sensor_value, size_t len){
 }
 
 // Initialize the Bluetooth subsystem
-int bluetooth_init(void) {
+int8_t bluetooth_init(void) {
 	//synchronous enable
 	int	err = bt_enable(NULL);
 	if (err) {
@@ -88,16 +135,3 @@ int bluetooth_init(void) {
 	return 0;
 }
 
-// Service Declaration 
-BT_GATT_SERVICE_DEFINE(
-	service_handle, BT_GATT_PRIMARY_SERVICE(BT_UUID_SENSOR_SERVICE),
-	BT_GATT_CHARACTERISTIC(
-		BT_UUID_GYRO, 
-		BT_GATT_CHRC_NOTIFY, 
-		BT_GATT_PERM_NONE, 
-		NULL,
-		NULL, 
-		NULL
-	),
-	BT_GATT_CCC(on_cccd_change, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-);
