@@ -14,34 +14,46 @@ const struct spi_buf_set tx_buf = {&spi_tx_buffer, 1};
 const struct spi_buf_set rx_buf = {&spi_rx_buffer, 1};
 
 // Data buffer for Bluetooth
-#define GYRO_DATA_OFFSET 0
-#define ACCEL_DATA_OFFSET 6
-#define TIMESTAMP_OFFSET 12
 static ble_packet_buffer_t sensor_value = {0};
-int16_t* gyro_data = (int16_t*)(sensor_value + GYRO_DATA_OFFSET);
-int16_t* accel_data = (int16_t*)(sensor_value + ACCEL_DATA_OFFSET);
-int16_t* timestamp_ptr = (int16_t*)(sensor_value + TIMESTAMP_OFFSET);
+#define GYRO_DATA_OFFSET 0 //base of buffer
+#define ACCEL_DATA_OFFSET 3 //3 16bit integer offset to compensate for gyro
+#define TIMESTAMP_OFFSET 6 // 6 16bit integer offset to compensate for gyro and accel
+#define SENSOR_VALUE_BASE ((int16_t*) sensor_value)
+int16_t* gyro_data = (SENSOR_VALUE_BASE + GYRO_DATA_OFFSET);
+int16_t* accel_data = (SENSOR_VALUE_BASE + ACCEL_DATA_OFFSET);
+int32_t* timestamp_ptr = (SENSOR_VALUE_BASE + TIMESTAMP_OFFSET);
 
 
 // Config Parameters (Calibration, Timestamp)
 static uint8_t calibration_enabled = 0;
-static int16_t calibration_offsets[6] = {0}; //TODO: Get rid of magic num, 3 for gyro 3 for accel
 static uint8_t calibration_counter = 0;
-static time_t timestamp = 0;
+static int16_t calibration_offsets[6] = {0}; //TODO: Get rid of magic num, 3 for gyro 3 for accel
+static int32_t timestamp = 0;
 
 // Calibration routine for sensor offsets
 static void calibrate_sensor(ble_packet_buffer_t data){
+	LOG_INF("\nCalibrating: %i\n Old Offsets: [%i,%i,%i,%i,%i,%i]\n New Data: [%i,%i,%i,%i,%i,%i]\n", 
+		calibration_counter, calibration_offsets[0], calibration_offsets[1], calibration_offsets[2], 
+		calibration_offsets[3], calibration_offsets[4], calibration_offsets[5], 
+		((int16_t*)data)[0], ((int16_t*)data)[1], ((int16_t*)data)[2], 
+		((int16_t*)data)[3], ((int16_t*)data)[4], ((int16_t*)data)[5]);
+
 	for(uint8_t i = 0; i < 6; i++){
-		calibration_offsets[i] = (calibration_offsets[i] + ((int16_t*)data)[i])/calibration_counter;
+		calibration_offsets[i] = ((calibration_offsets[i]*calibration_counter) + ((int16_t*)data)[i])/(calibration_counter+1);
 	}
+	//log calibration offsets
+	LOG_INF("\n New Calibration Offsets: [%i, %i, %i, %i, %i, %i]\n", 
+		calibration_offsets[0], calibration_offsets[1], calibration_offsets[2], 
+		calibration_offsets[3], calibration_offsets[4], calibration_offsets[5]);
 }
 
-// Config Callback for Bluetooth
-static config_write_callback_t config_write_cb(const void* buf, uint16_t len, uint16_t offset, uint8_t flags){	
+// Callback for Bluetooth
+void set_calibration_mode(const void* buf, uint16_t len, uint16_t offset, uint8_t flags){	
 	LOG_INF("IMU Config Write Called\n");
 	for(uint16_t i = offset; i < len; i++){
 		LOG_INF("idx: %i, value: 0x%x ", i, ((uint8_t*)buf)[i]);
 	}
+	calibration_enabled = ((uint8_t*)buf)[offset];
 }
 
 // Helper macro to assemble sensor data out of the SPI buffer 
@@ -50,9 +62,7 @@ static config_write_callback_t config_write_cb(const void* buf, uint16_t len, ui
 	(int16_t)(((uint16_t)((uint8_t *)spibufset.buffers->buf)[index+1]) << 8 | ((uint8_t *)spibufset.buffers->buf)[index]);
 
 
-
 static int8_t imu_init(void){
-	set_config_write_callback((config_write_callback_t*) &config_write_cb);
 	if(!spi_is_ready_dt(&st_lsm6dso)){
 		LOG_ERR("SPI not ready\n");
 		return -1;
@@ -111,6 +121,13 @@ static int8_t imu_init(void){
 	return 0;
 }
 
+static void rectify_packet(ble_packet_buffer_t data){
+	int16_t* dataptr = (int16_t*)data;
+	for(uint8_t i = 0; i < 6; i++){
+		dataptr[i] -= calibration_offsets[i];
+	}
+}
+
 int8_t imu_main(void){
 	int8_t err = imu_init();
 	if(err){
@@ -130,18 +147,24 @@ int8_t imu_main(void){
 		accel_data[0] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 7); 	 //Accel X
 		accel_data[1] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 9); 	 //Accel Y
 		accel_data[2] 	= ASSEMBLE_SENSOR_DATA(rx_buf, 11);  //Accel Z
-		*timestamp_ptr = timestamp++;
-		LOG_INF("Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
-		LOG_INF("Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
-		if(calibration_enabled){
+		*timestamp_ptr = ++timestamp;
+		// LOG_INF("Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
+		// LOG_INF("Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
+		if(calibration_counter < UINT8_MAX && calibration_enabled){
+			if(calibration_counter == 0) memset(calibration_offsets, 0, sizeof(calibration_offsets));
 			calibrate_sensor(sensor_value);
-			calibration_counter++;
+			++calibration_counter;
 			timestamp = 0;
 		} else {
+			calibration_enabled = 0;
 			calibration_counter = 0;
-			transmitData(sensor_value);
+			rectify_packet(sensor_value);
+			int8_t err = transmitData(sensor_value);
+			if(!err){
+				LOG_INF("Transmitted Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
+				LOG_INF("Transmitted Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
+			}
 		}
-
 
 		k_msleep(1000/POLL_FREQ);
 	}

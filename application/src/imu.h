@@ -115,4 +115,7 @@
 // Main function for Sensor Query thread
 int8_t imu_main(void);
 
+// Function to put the IMU in calibration mode
+void set_calibration_mode(const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
+
 #endif

@@ -53,12 +53,6 @@ static void on_data_cccd_change(const struct bt_gatt_attr *attr, uint16_t value)
 
 // Config characteristic callbacks
 
-static config_write_callback_t* config_write_cb = NULL;
-void set_config_write_callback(config_write_callback_t *callback){
-	LOG_INF("Setting write callback: %p\n", callback);
-	config_write_cb = callback;
-}
-
 static ssize_t on_config_write(
 	struct bt_conn *conn, 
 	const struct bt_gatt_attr *attr, 
@@ -69,12 +63,7 @@ static ssize_t on_config_write(
 	)
 {
 	LOG_INF("Config write\n");
-	if(config_write_cb == NULL){
-		LOG_WRN("No config write callback function set\n");
-		return -1;
-	}
-	LOG_INF("Calling Config write callback\n");
-	(*config_write_cb)(buf, len, offset, flags);
+	set_calibration_mode(buf, len, offset, flags);
 	return 0;
 }
 
@@ -104,7 +93,7 @@ BT_GATT_SERVICE_DEFINE(
 int8_t transmitData(ble_packet_buffer_t data){
 	memcpy(_sensor_value, data, sizeof(ble_packet_buffer_t));
 	if (!notify_enabled) {
-		LOG_WRN("Notifications not enabled\n");
+		// LOG_WRN("Notifications not enabled\n");
 		return -EACCES;
 	}
 	LOG_INF("Transmitting...\n");
