@@ -16,12 +16,12 @@ const struct spi_buf_set rx_buf = {&spi_rx_buffer, 1};
 // Data buffer for Bluetooth
 static ble_packet_buffer_t sensor_value = {0};
 #define GYRO_DATA_OFFSET 0 //base of buffer
-#define ACCEL_DATA_OFFSET 3 //3 16bit integer offset to compensate for gyro
-#define TIMESTAMP_OFFSET 6 // 6 16bit integer offset to compensate for gyro and accel
-#define SENSOR_VALUE_BASE ((int16_t*) sensor_value)
-int16_t* gyro_data = (SENSOR_VALUE_BASE + GYRO_DATA_OFFSET);
-int16_t* accel_data = (SENSOR_VALUE_BASE + ACCEL_DATA_OFFSET);
-int32_t* timestamp_ptr = (SENSOR_VALUE_BASE + TIMESTAMP_OFFSET);
+#define ACCEL_DATA_OFFSET 6 //3 16bit integer offset for gyro
+#define TIMESTAMP_OFFSET 12 // 6 16bit integer offset to compensate for gyro and accel
+#define SENSOR_VALUE_BASE (sensor_value)
+int16_t* gyro_data 		= 		(int16_t*)(SENSOR_VALUE_BASE + GYRO_DATA_OFFSET);
+int16_t* accel_data 	= 		(int16_t*)(SENSOR_VALUE_BASE + ACCEL_DATA_OFFSET);
+int32_t* timestamp_ptr 	= 		(int16_t*)(SENSOR_VALUE_BASE + TIMESTAMP_OFFSET);
 
 
 // Config Parameters (Calibration, Timestamp)
