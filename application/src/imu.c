@@ -21,14 +21,17 @@ static ble_packet_buffer_t sensor_value = {0};
 #define SENSOR_VALUE_BASE (sensor_value)
 int16_t* gyro_data 		= 		(int16_t*)(SENSOR_VALUE_BASE + GYRO_DATA_OFFSET);
 int16_t* accel_data 	= 		(int16_t*)(SENSOR_VALUE_BASE + ACCEL_DATA_OFFSET);
-int32_t* timestamp_ptr 	= 		(int16_t*)(SENSOR_VALUE_BASE + TIMESTAMP_OFFSET);
-
+int32_t* timestamp_ptr 	= 		(int32_t*)(SENSOR_VALUE_BASE + TIMESTAMP_OFFSET);
 
 // Config Parameters (Calibration, Timestamp)
 static uint8_t calibration_enabled = 0;
 static uint8_t calibration_counter = 0;
 static int16_t calibration_offsets[6] = {0}; //TODO: Get rid of magic num, 3 for gyro 3 for accel
 static int32_t timestamp = 0;
+
+#define GYRO_POLL_FREQ GYRO_104_HZ
+#define ACCEL_POLL_FREQ ACCEL_OFF
+#define SENSOR_TRANSMIT_FREQ 0x64
 
 // Calibration routine for sensor offsets
 static void calibrate_sensor(ble_packet_buffer_t data){
@@ -93,7 +96,7 @@ static int8_t imu_init(void){
     
 	// Configure Gyroscope to run at 52Hz
     tx_data[0] = CONFIG(WRITE, CTRL2_G);
-    tx_data[1] = GYRO_52_HZ;
+    tx_data[1] = GYRO_POLL_FREQ;
     if(spi_write_dt(&st_lsm6dso, &tx_buf)){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
@@ -113,7 +116,7 @@ static int8_t imu_init(void){
 
 	// Configure Accelerometer to run at 52Hz
 	tx_data[0] = CONFIG(WRITE, CTRL1_XL);
-	tx_data[1] = ACCEL_52_HZ;
+	tx_data[1] = ACCEL_POLL_FREQ;
 	if(spi_write_dt(&st_lsm6dso, &tx_buf)){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
@@ -163,10 +166,11 @@ int8_t imu_main(void){
 			if(!err){
 				LOG_INF("Transmitted Gyro Data:\nX: %d\nY: %d\nZ: %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
 				LOG_INF("Transmitted Accel Data:\nX: %d\nY: %d\nZ: %d\n", accel_data[0], accel_data[1], accel_data[2]);
+				LOG_INF("Transmitted Timestamp: %d\n", *timestamp_ptr);
 			}
 		}
 
-		k_msleep(1000/POLL_FREQ);
+		k_msleep(1000/SENSOR_TRANSMIT_FREQ);
 	}
 	return 0;
 }

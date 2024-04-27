@@ -93,7 +93,7 @@ BT_GATT_SERVICE_DEFINE(
 int8_t transmitData(ble_packet_buffer_t data){
 	memcpy(_sensor_value, data, sizeof(ble_packet_buffer_t));
 	if (!notify_enabled) {
-		LOG_WRN("Notifications not enabled\n");
+		// LOG_WRN("Notifications not enabled\n");
 		return -EACCES;
 	}
 	LOG_INF("Transmitting...\n");

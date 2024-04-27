@@ -53,21 +53,24 @@
 
 // Sensor configuration macros
 
-// Polling Frequency
-#define POLL_FREQ         0x64 
-
 // Gyroscope configs - CTRL2_G
-#define GYRO_OFF        (0x0 << 4)
-#define GYRO_12_5_HZ    (0x1 << 4)
-#define GYRO_26_HZ      (0x2 << 4)
-#define GYRO_52_HZ      (0x3 << 4)
-#define GYRO_104_HZ     (0x4 << 4)
-#define GYRO_208_HZ     (0x5 << 4)
-#define GYRO_416_HZ     (0x6 << 4)
-#define GYRO_833_HZ     (0x7 << 4)
-#define GYRO_1660_HZ    (0x8 << 4)
-#define GYRO_3330_HZ    (0x9 << 4)
-#define GYRO_6660_HZ    (0xA << 4)
+#define GYRO_OFF        (0b0000 << 4)
+#define GYRO_12_5_HZ    (0b0001 << 4)
+#define GYRO_26_HZ      (0b0010 << 4)
+#define GYRO_52_HZ      (0b0011 << 4)
+#define GYRO_104_HZ     (0b0100 << 4)
+#define GYRO_208_HZ     (0b0101 << 4)
+#define GYRO_416_HZ     (0b0110 << 4)
+#define GYRO_833_HZ     (0b0111 << 4)
+#define GYRO_1660_HZ    (0b1000 << 4)
+#define GYRO_3330_HZ    (0x1001 << 4)
+#define GYRO_6660_HZ    (0x1010 << 4)
+
+#define GYRO_250_DPS    (0b00 << 2)
+#define GYRO_500_DPS    (0b01 << 2)
+#define GYRO_1000_DPS   (0b10 << 2)
+#define GYRO_2000_DPS   (0b11 << 2)
+
 
 // Gyroscope configs - CTRL7_G 
 #define GYROSCOPE_HIGH_PERFORMANCE_DISABLED (1 << 7)
