@@ -30,7 +30,7 @@ static int16_t calibration_offsets[6] = {0}; //TODO: Get rid of magic num, 3 for
 static int32_t timestamp = 0;
 
 #define GYRO_POLL_FREQ GYRO_104_HZ
-#define ACCEL_POLL_FREQ ACCEL_OFF
+#define ACCEL_POLL_FREQ ACCEL_104_HZ
 #define SENSOR_TRANSMIT_FREQ 0x64
 
 // Calibration routine for sensor offsets
@@ -102,25 +102,81 @@ static int8_t imu_init(void){
 		return -1;
     }
 
-	// Configure Gyro performance mode and high pass filter
-    tx_data[0] = CONFIG(WRITE, CTRL7_G);
+	// Configure Gyro
+	// ODR, FS
+	tx_data[0] = CONFIG(WRITE, CTRL2_G);
     tx_data[1] = (
-		GYROSCOPE_HIGH_PERFORMANCE_ENABLED | 
-		GYROSCOPE_HIGH_PASS_FILTER_DISABLE | 
-		GYROSCOPE_HIGH_PASS_FILTER_CUTOFF_1_04HZ
+		GYRO_104_HZ | 
+		GYRO_250_DPS | 
+		GYRO_FS_DPS
 	);
     if(spi_write_dt(&st_lsm6dso, &tx_buf)){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
     }
 
-	// Configure Accelerometer to run at 52Hz
+	// Gyro LPF 1
+	tx_data[0] = CONFIG(WRITE, CTRL4_C);
+    tx_data[1] = GYRO_LPF_1_ENABLE;
+    if(spi_write_dt(&st_lsm6dso, &tx_buf)){
+		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
+		return -1;
+    }
+	tx_data[0] = CONFIG(WRITE, CTRL6_C);
+    tx_data[1] = (
+		DEN_NONE |
+		XL_HM_ENABLE |
+		USR_OFF_W_10 |
+		G_FTYPE_100
+	);
+    if(spi_write_dt(&st_lsm6dso, &tx_buf)){
+		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
+		return -1;
+    }
+
+	// High Performance, High Pass, XL_Offset
+	tx_data[0] = CONFIG(WRITE, CTRL7_G);
+    tx_data[1] = (
+		G_HM_ENABLE |
+		G_HP_ENABLE |
+		G_HP_16_mHZ |
+		OIS_ON_SPI |
+		XL_OFS_BYPASS |
+		OIS_DISABLE
+	);
+    if(spi_write_dt(&st_lsm6dso, &tx_buf)){
+		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
+		return -1;
+    }
+
+	// Configure Accelerometer
+	// ODR, FS, Resolution
 	tx_data[0] = CONFIG(WRITE, CTRL1_XL);
-	tx_data[1] = ACCEL_POLL_FREQ;
+	tx_data[1] = (
+		ACCEL_POLL_FREQ |
+		ACCEL_2G_SCALE_FS_MODE_1 |
+		LPF2_XL_ENABLE
+	);
 	if(spi_write_dt(&st_lsm6dso, &tx_buf)){
 		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
 		return -1;
 	}
+
+	// HP/LPF2 settings
+	tx_data[0] = CONFIG(WRITE, CTRL8_XL);
+	tx_data[1] = (
+		HPCF_XL_000 |
+		XL_HP_REF_DISABLE |
+		FAST_SETTLE_DISABLE |
+		XL_LPF2	|
+		XL_FS_MODE_OLD |
+		LPF2_6D_DISABLE
+	);
+	if(spi_write_dt(&st_lsm6dso, &tx_buf)){
+		LOG_ERR("Send failed, line: %d, file: %s\n", __LINE__, __FILE__);
+		return -1;
+	}
+
 	return 0;
 }
 

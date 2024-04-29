@@ -53,41 +53,6 @@
 
 // Sensor configuration macros
 
-// Gyroscope configs - CTRL2_G
-#define GYRO_OFF        (0b0000 << 4)
-#define GYRO_12_5_HZ    (0b0001 << 4)
-#define GYRO_26_HZ      (0b0010 << 4)
-#define GYRO_52_HZ      (0b0011 << 4)
-#define GYRO_104_HZ     (0b0100 << 4)
-#define GYRO_208_HZ     (0b0101 << 4)
-#define GYRO_416_HZ     (0b0110 << 4)
-#define GYRO_833_HZ     (0b0111 << 4)
-#define GYRO_1660_HZ    (0b1000 << 4)
-#define GYRO_3330_HZ    (0x1001 << 4)
-#define GYRO_6660_HZ    (0x1010 << 4)
-
-#define GYRO_250_DPS    (0b00 << 2)
-#define GYRO_500_DPS    (0b01 << 2)
-#define GYRO_1000_DPS   (0b10 << 2)
-#define GYRO_2000_DPS   (0b11 << 2)
-
-
-// Gyroscope configs - CTRL7_G 
-#define GYROSCOPE_HIGH_PERFORMANCE_DISABLED (1 << 7)
-#define GYROSCOPE_HIGH_PERFORMANCE_ENABLED  (0 << 7)
-//highpass filter. Note: only works if the gyroscope is in high performance mode
-#define GYROSCOPE_HIGH_PASS_FILTER_ENABLE           (1 << 6) 
-#define GYROSCOPE_HIGH_PASS_FILTER_DISABLE          (0 << 6)
-#define GYROSCOPE_HIGH_PASS_FILTER_CUTOFF_16MHZ     (0b00 << 4)
-#define GYROSCOPE_HIGH_PASS_FILTER_CUTOFF_65MHZ     (0b01 << 4)
-#define GYROSCOPE_HIGH_PASS_FILTER_CUTOFF_260MHZ    (0b10 << 4)
-#define GYROSCOPE_HIGH_PASS_FILTER_CUTOFF_1_04HZ    (0b11 << 4)
-
-
-// Gyroscope configs - CTRL6_C
-#define GYROSCOPE_52HZ_LPF1_
-
-
 // Accelerometer ODR configuration - CTRL1_XL
 #define ACCEL_OFF       (0x0 << 4)
 #define ACCEL_1_6_HZ    (0xb << 4)
@@ -111,9 +76,88 @@
 #define ACCEL_8G_SCALE_FS_MODE_1  (0b11 << 2)
 #define ACCEL_16G_SCALE_FS_MODE_0 (0b01 << 2)
 
-// Accelerometer high-scale resolution selection - CTRL2_XL
+// Accelerometer high-scale resolution selection - CTRL1_XL
 #define LPF2_XL_ENABLE  1
 #define LPF2_XL_DISABLE 0 //default
+
+// Gyroscope configs - CTRL2_G
+#define GYRO_OFF        (0b0000 << 4)
+#define GYRO_12_5_HZ    (0b0001 << 4)
+#define GYRO_26_HZ      (0b0010 << 4)
+#define GYRO_52_HZ      (0b0011 << 4)
+#define GYRO_104_HZ     (0b0100 << 4)
+#define GYRO_208_HZ     (0b0101 << 4)
+#define GYRO_416_HZ     (0b0110 << 4)
+#define GYRO_833_HZ     (0b0111 << 4)
+#define GYRO_1660_HZ    (0b1000 << 4)
+#define GYRO_3330_HZ    (0x1001 << 4)
+#define GYRO_6660_HZ    (0x1010 << 4)
+
+#define GYRO_250_DPS    (0b00 << 2)
+#define GYRO_500_DPS    (0b01 << 2)
+#define GYRO_1000_DPS   (0b10 << 2)
+#define GYRO_2000_DPS   (0b11 << 2)
+
+#define GYRO_FS_DPS     0
+#define GYRO_150_DPS    1
+
+#define GYRO_LPF_1_DISABLE  (0 << 1)
+#define GYRO_LPF_1_ENABLE   (1 << 1)
+
+// CTRL6_C
+#define DEN_NONE        (0b000 << 5)
+#define DEN_EDGE        (0b100 << 5)
+#define DEN_LEVEL_TRIG  (0b010 << 5)
+#define DEN_LEVEL_LATCH (0b011 << 5)
+#define DEN_LEVEL_FIFO  (0b110 << 5)
+#define XL_HM_ENABLE    (0 << 4)
+#define XL_HM_DISABLE   (1 << 4)
+#define USR_OFF_W_10    (0 << 3)
+#define USR_OFF_W_6     (1 << 3)
+#define G_FTYPE_000       0
+#define G_FTYPE_001       1
+#define G_FTYPE_010       2
+#define G_FTYPE_011       3
+#define G_FTYPE_100       4
+#define G_FTYPE_101       5
+#define G_FTYPE_110       6
+#define G_FTYPE_111       7
+
+// CTRL7_G
+#define G_HM_ENABLE     (0 << 7)
+#define G_HM_DISABLE    (1 << 7)
+#define G_HP_DISABLE    (0 << 6)
+#define G_HP_ENABLE     (1 << 6)
+#define G_HP_16_mHZ     (0b00 << 4)
+#define G_HP_65_mHZ     (0b01 << 4)
+#define G_HP_260_mHZ    (0b10 << 4)
+#define G_HP_1_04_HZ    (0b11 << 4)
+#define OIS_ON_SPI      (0 << 2)
+#define OIS_ON_PRI      (1 << 2)
+#define XL_OFS_BYPASS   (0 << 1)
+#define XL_OFS_ENABLE   (1 << 1)
+#define OIS_DISABLE     0
+#define OIS_ENABLE      1
+
+// CTRL8_XL
+#define HPCF_XL_000         (0b000 << 5)
+#define HPCF_XL_001         (0b001 << 5)
+#define HPCF_XL_010         (0b010 << 5)
+#define HPCF_XL_011         (0b011 << 5)
+#define HPCF_XL_100         (0b100 << 5)
+#define HPCF_XL_101         (0b101 << 5)
+#define HPCF_XL_110         (0b110 << 5)
+#define HPCF_XL_111         (0b111 << 5)
+#define XL_HP_REF_DISABLE   (0 << 4)
+#define XL_HP_REF_ENABLE    (1 << 4)
+#define FAST_SETTLE_DISABLE (0 << 3)
+#define FAST_SETTLE_ENABLE  (1 << 3)
+#define XL_LPF2             (0 << 2)
+#define XL_HP_SLOPE         (1 << 2)
+#define XL_FS_MODE_OLD      (0 << 1)
+#define XL_FS_MODE_NEW      (1 << 1)
+#define LPF2_6D_DISABLE     0
+#define LPF2_6D_ENABLE      1
 
 // Main function for Sensor Query thread
 int8_t imu_main(void);
