@@ -5,10 +5,8 @@ This repository contains the embedded software for the ECE senior design project
 ## Installation / Setup
 
 Before you clone the repository, it is important that you setup the necessary toolchains for an NRF based project.
-<<<<<<< HEAD
 This project follows NRF's recommended workflow of building the project in an isolated environment managed by `west`. 
 To install `west`, follow the instructions [here](https://docs.zephyrproject.org/latest/develop/west/install.html).
-To install the **necessary VSCODE extensions**, follow NRF's getting started guide [here](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/installation.html).
 
 After you have done both of those steps, verify that west is properly installed by running `west --version` in your terminal.
 Once you have verified your west installation, run the following command in the directory where you want to create the project top-level directory:
